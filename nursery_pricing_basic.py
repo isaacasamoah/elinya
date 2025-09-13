@@ -5,7 +5,7 @@ import pandas as pd
 st.set_page_config(
     page_title="Nursery Pricing Calculator",
     page_icon="🌱",
-    layout="centered"
+    layout="wide"  # Better responsive behavior
 )
 
 st.title("🌱 Nursery Pricing Calculator")
