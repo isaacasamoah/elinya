@@ -11,10 +11,22 @@ st.set_page_config(
 st.title("🌱 Nursery Pricing Calculator")
 st.write("Calculate optimal pricing for your nursery products with built-in profit margins")
 
-# Create two columns for better layout
-col1, col2 = st.columns([2, 1])
+# Desktop view toggle - mobile is default
+desktop_view = st.checkbox("🖥️ Desktop View", value=False, help="Switch to two-column layout for desktop")
+st.write("---")
 
-with col1:
+# Mobile-first layout - single column by default, two columns for desktop
+if desktop_view:
+    # Desktop layout - two columns
+    col1, col2 = st.columns([2, 1])
+    input_container = col1
+    results_container = col2
+else:
+    # Mobile layout (default) - single column
+    input_container = st.container()
+    results_container = st.container()
+
+with input_container:
     st.header("💰 Cost Inputs")
     
     # Plant costs
@@ -41,17 +53,28 @@ with col1:
     # Profit margin
     st.subheader("Profit Margin")
     profit_margin = st.slider("Desired Profit Margin (%)", min_value=20, max_value=100, value=30, step=5)
+    
+    # GST option - define the variable here in the input section
+    include_gst = st.checkbox("Add GST (10%)", value=True, help="Add Australian GST to final price")
 
-# Calculate costs and pricing
+# Calculate all costs first
 total_material_cost = pot_cost + soil_cost + fertilizer_cost + other_materials
 time_cost = care_hours * hourly_rate
 total_cost = plant_cost + total_material_cost + time_cost
 
-# Calculate selling price based on desired margin
-selling_price = total_cost / (1 - profit_margin/100)
-profit_amount = selling_price - total_cost
+# Calculate selling price based on desired margin (before GST)
+selling_price_before_gst = total_cost / (1 - profit_margin/100)
+profit_amount = selling_price_before_gst - total_cost
 
-with col2:
+# Now calculate GST and final price
+if include_gst:
+    gst_amount = selling_price_before_gst * 0.10
+    final_selling_price = selling_price_before_gst + gst_amount
+else:
+    gst_amount = 0.0
+    final_selling_price = selling_price_before_gst
+
+with results_container:
     st.header("💡 Pricing Results")
     
     # Cost breakdown
@@ -64,11 +87,22 @@ with col2:
     
     # Pricing recommendation
     st.subheader("Recommended Price")
-    st.metric(
-        label="Selling Price", 
-        value=f"${selling_price:.2f}",
-        help=f"Ensures {profit_margin}% profit margin"
-    )
+    
+    # Show price breakdown
+    if include_gst:
+        st.write(f"**Price before GST:** ${selling_price_before_gst:.2f}")
+        st.write(f"**GST (10%):** ${gst_amount:.2f}")
+        st.metric(
+            label="Final Price (inc GST)", 
+            value=f"${final_selling_price:.2f}",
+            help=f"Includes GST and ensures {profit_margin}% profit margin"
+        )
+    else:
+        st.metric(
+            label="Selling Price", 
+            value=f"${final_selling_price:.2f}",
+            help=f"Ensures {profit_margin}% profit margin"
+        )
     
     st.metric(
         label="Profit", 
@@ -111,7 +145,7 @@ if comp3_price > 0:
 
 if competitors:
     st.subheader("Price Comparison")
-    comparison_data = competitors + [{"Name": "Your Price", "Price": selling_price}]
+    comparison_data = competitors + [{"Name": "Your Price", "Price": final_selling_price}]
     df = pd.DataFrame(comparison_data)
     
     # Sort by price for easy comparison
@@ -121,20 +155,21 @@ if competitors:
     # Quick analysis
     avg_competitor_price = sum([c["Price"] for c in competitors]) / len(competitors)
     
-    if selling_price <= avg_competitor_price:
-        st.success(f"✅ Your price (${selling_price:.2f}) is competitive with average competitor price (${avg_competitor_price:.2f})")
+    if final_selling_price <= avg_competitor_price:
+        st.success(f"✅ Your price (${final_selling_price:.2f}) is competitive with average competitor price (${avg_competitor_price:.2f})")
     else:
-        price_diff = selling_price - avg_competitor_price
+        price_diff = final_selling_price - avg_competitor_price
         st.warning(f"⚠️ Your price is ${price_diff:.2f} above average competitor price. Consider if premium quality justifies this.")
 
-# Summary section
+# Summary section - all variables are now properly defined
 st.header("📋 Pricing Summary")
 
-gst_text = f" (inc GST ${gst_amount:.2f})" if include_gst else ""
+# Build GST text safely
+gst_text = f" (inc GST ${gst_amount:.2f})" if include_gst and gst_amount > 0 else ""
 
 summary_text = f"""
 **Product Pricing Decision:**
-- **Final Selling Price:** ${selling_price:.2f}{gst_text}
+- **Final Selling Price:** ${final_selling_price:.2f}{gst_text}
 - **Total Cost:** ${total_cost:.2f}
 - **Profit:** ${profit_amount:.2f} ({profit_margin}%)
 - **Cost Breakdown:** Plant ${plant_cost:.2f} + Materials ${total_material_cost:.2f} + Time ${time_cost:.2f}
