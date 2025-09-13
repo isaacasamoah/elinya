@@ -129,24 +129,15 @@ if competitors:
 
 # Summary section
 st.header("📋 Pricing Summary")
-
-# Safe variable access for summary
-gst_text = f" (inc GST ${gst_amount:.2f})" if 'gst_amount' in locals() and include_gst else ""
-discount_text = f" (after {sales_discount}% discount)" if 'sales_discount' in locals() and sales_discount > 0 else ""
-
 summary_text = f"""
 **Product Pricing Decision:**
-- **Final Selling Price:** ${final_selling_price:.2f}{gst_text}{discount_text}
+- **Recommended Selling Price:** ${selling_price:.2f}
 - **Total Cost:** ${total_cost:.2f}
-- **Profit:** ${profit_amount:.2f} ({actual_profit_margin:.1f}%)
+- **Profit:** ${profit_amount:.2f} ({profit_margin}%)
 - **Cost Breakdown:** Plant ${plant_cost:.2f} + Materials ${total_material_cost:.2f} + Time ${time_cost:.2f}
 """
 
-if 'competitors' in locals() and competitors:
-    market_pos = locals().get('market_position', 'Analyzed')
-    summary_text += f"\n- **Market Position:** {market_pos} (vs {len(competitors)} competitors)"
+if competitors:
+    summary_text += f"\n- **Market Position:** Compared to {len(competitors)} competitors"
 
-if 'discount_warning' in locals() and discount_warning:
-    summary_text += f"\n- **Note:** Discount limited to maintain {minimum_profit}% minimum profit"
-
-st.text_area("Copy this summary:", summary_text, height=180)
+st.text_area("Copy this summary:", summary_text, height=150)
