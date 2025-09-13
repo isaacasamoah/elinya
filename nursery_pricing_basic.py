@@ -129,9 +129,12 @@ if competitors:
 
 # Summary section
 st.header("📋 Pricing Summary")
+
+gst_text = f" (inc GST ${gst_amount:.2f})" if include_gst else ""
+
 summary_text = f"""
 **Product Pricing Decision:**
-- **Recommended Selling Price:** ${selling_price:.2f}
+- **Final Selling Price:** ${selling_price:.2f}{gst_text}
 - **Total Cost:** ${total_cost:.2f}
 - **Profit:** ${profit_amount:.2f} ({profit_margin}%)
 - **Cost Breakdown:** Plant ${plant_cost:.2f} + Materials ${total_material_cost:.2f} + Time ${time_cost:.2f}
