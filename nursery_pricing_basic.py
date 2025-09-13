@@ -142,7 +142,7 @@ summary_text = f"""
 """
 
 if competitors:
-    summary_text += f"\n- **Market Position:** {market_position} (vs {len(competitors)} competitors)"
+    summary_text += f"\n- **Market Position:** {locals().get('market_position', 'Analyzed')} (vs {len(competitors)} competitors)"
 
 if discount_warning:
     summary_text += f"\n- **Note:** Discount limited to maintain {minimum_profit}% minimum profit"
