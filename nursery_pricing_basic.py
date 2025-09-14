@@ -43,6 +43,8 @@ with input_container:
     pot_cost = st.number_input("Pot/Container ($)", min_value=0.0, value=2.0, step=0.25)
     soil_cost = st.number_input("Soil/Growing Medium ($)", min_value=0.0, value=1.0, step=0.25)
     fertilizer_cost = st.number_input("Fertilizer/Care Products ($)", min_value=0.0, value=0.50, step=0.25)
+    packaging_cost = st.number_input("Packaging/Shipping Materials ($)", min_value=0.0, value=1.50, step=0.25, 
+                                   help="Box, padding, protective materials for shipping")
     other_materials = st.number_input("Other Materials ($)", min_value=0.0, value=0.0, step=0.25)
     
     # Time investment
@@ -57,8 +59,8 @@ with input_container:
     # GST option - define the variable here in the input section
     include_gst = st.checkbox("Add GST (10%)", value=True, help="Add Australian GST to final price")
 
-# Calculate all costs first
-total_material_cost = pot_cost + soil_cost + fertilizer_cost + other_materials
+# Calculate all costs first - ALL INPUT VARIABLES ARE NOW DEFINED
+total_material_cost = pot_cost + soil_cost + fertilizer_cost + packaging_cost + other_materials
 time_cost = care_hours * hourly_rate
 total_cost = plant_cost + total_material_cost + time_cost
 
@@ -84,6 +86,17 @@ with results_container:
     st.write(f"**Time ({care_hours}h):** ${time_cost:.2f}")
     st.write("---")
     st.write(f"**Total Cost:** ${total_cost:.2f}")
+    
+    # Detailed breakdown (expandable)
+    with st.expander("📋 Detailed Cost Breakdown"):
+        st.write(f"Plant: ${plant_cost:.2f}")
+        st.write(f"Pot/Container: ${pot_cost:.2f}")
+        st.write(f"Soil/Growing Medium: ${soil_cost:.2f}")
+        st.write(f"Fertilizer/Care: ${fertilizer_cost:.2f}")
+        st.write(f"Packaging/Shipping: ${packaging_cost:.2f}")
+        if other_materials > 0:
+            st.write(f"Other Materials: ${other_materials:.2f}")
+        st.write(f"Time ({care_hours}h @ ${hourly_rate:.2f}/h): ${time_cost:.2f}")
     
     # Pricing recommendation
     st.subheader("Recommended Price")
@@ -161,7 +174,7 @@ if competitors:
         price_diff = final_selling_price - avg_competitor_price
         st.warning(f"⚠️ Your price is ${price_diff:.2f} above average competitor price. Consider if premium quality justifies this.")
 
-# Summary section - all variables are now properly defined
+# Summary section - ALL VARIABLES ARE NOW PROPERLY DEFINED BEFORE USE
 st.header("📋 Pricing Summary")
 
 # Build GST text safely
