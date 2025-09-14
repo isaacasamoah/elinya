@@ -194,14 +194,24 @@ if competitors:
     df_sorted = df.sort_values("Price")
     st.dataframe(df_sorted, hide_index=True)
     
-    # Quick analysis
+    # Market position analysis
+    st.subheader("Market Analysis")
     avg_competitor_price = sum([c["Price"] for c in competitors]) / len(competitors)
     
+    # Format prices clearly
+    your_price_text = f"${final_selling_price:.2f}"
+    avg_price_text = f"${avg_competitor_price:.2f}"
+    
     if final_selling_price <= avg_competitor_price:
-        st.success(f"✅ Your price (${final_selling_price:.2f}) is competitive with average competitor price (${avg_competitor_price:.2f})")
+        st.success(f"✅ **Competitive Pricing**")
+        st.write(f"Your price: {your_price_text}")
+        st.write(f"Average competitor: {avg_price_text}")
     else:
         price_diff = final_selling_price - avg_competitor_price
-        st.warning(f"⚠️ Your price is ${price_diff:.2f} above average competitor price. Consider if premium quality justifies this.")
+        st.warning(f"⚠️ **Above Market**")
+        st.write(f"Your price: {your_price_text}")
+        st.write(f"Average competitor: {avg_price_text}")
+        st.write(f"You're ${price_diff:.2f} above average - consider if premium quality justifies this.")
 
 # Summary section - ALL VARIABLES PROPERLY DEFINED
 st.header("📋 Pricing Summary")
