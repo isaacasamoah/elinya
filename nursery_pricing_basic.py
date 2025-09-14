@@ -172,7 +172,7 @@ summary_text = f"""
 - **Final Selling Price:** ${final_selling_price:.2f}{gst_text}
 - **Total Cost:** ${total_cost:.2f}
 - **Profit:** ${profit_amount:.2f} ({profit_margin}%)
-- **Cost Breakdown:** Plant ${plant_cost:.2f} + Materials ${total_material_cost:.2f} + Time ${time_cost:.2f}
+- **Cost Breakdown:** Plant ${plant_cost:.2f} + Materials ${total_material_cost:.2f} (incl. packaging ${packaging_cost:.2f}) + Time ${time_cost:.2f}
 """
 
 if competitors:
