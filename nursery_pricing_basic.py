@@ -52,29 +52,55 @@ with input_container:
     care_hours = st.number_input("Care/Prep Hours", min_value=0.0, value=1.0, step=0.25)
     hourly_rate = st.number_input("Your Hourly Rate ($)", min_value=0.0, value=20.0, step=5.0)
     
-    # Profit margin
-    st.subheader("Profit Margin")
+    # Pricing settings - ALL INPUT VARIABLES DEFINED HERE
+    st.subheader("Pricing Settings")
     profit_margin = st.slider("Desired Profit Margin (%)", min_value=20, max_value=100, value=30, step=5)
-    
-    # GST option - define the variable here in the input section
+    sales_discount = st.slider("Sales Discount (%)", min_value=0, max_value=50, value=0, step=5,
+                              help="Discount applied to final price")
+    minimum_sales_profit = st.slider("Minimum Sales Profit (%)", min_value=0, max_value=20, value=10, step=1,
+                                    help="Lowest profit margin allowed during sales")
     include_gst = st.checkbox("Add GST (10%)", value=True, help="Add Australian GST to final price")
 
-# Calculate all costs first - ALL INPUT VARIABLES ARE NOW DEFINED
+# ALL INPUT VARIABLES NOW DEFINED - START CALCULATIONS
+# Step 1: Calculate total costs
 total_material_cost = pot_cost + soil_cost + fertilizer_cost + packaging_cost + other_materials
 time_cost = care_hours * hourly_rate
 total_cost = plant_cost + total_material_cost + time_cost
 
-# Calculate selling price based on desired margin (before GST)
-selling_price_before_gst = total_cost / (1 - profit_margin/100)
-profit_amount = selling_price_before_gst - total_cost
+# Step 2: Calculate base selling price (before GST, before discount)
+base_selling_price = total_cost / (1 - profit_margin/100)
 
-# Now calculate GST and final price
+# Step 3: Add GST to get list price
 if include_gst:
-    gst_amount = selling_price_before_gst * 0.10
-    final_selling_price = selling_price_before_gst + gst_amount
+    gst_amount = base_selling_price * 0.10
+    list_price = base_selling_price + gst_amount
 else:
     gst_amount = 0.0
-    final_selling_price = selling_price_before_gst
+    list_price = base_selling_price
+
+# Step 4: Apply discount to list price
+if sales_discount > 0:
+    discounted_price = list_price * (1 - sales_discount/100)
+    
+    # Calculate minimum allowable price
+    min_price_before_gst = total_cost / (1 - minimum_sales_profit/100) if minimum_sales_profit > 0 else total_cost
+    min_allowable_price = min_price_before_gst * 1.10 if include_gst else min_price_before_gst
+    
+    # Final price is higher of discounted price or minimum
+    final_selling_price = max(discounted_price, min_allowable_price)
+else:
+    final_selling_price = list_price
+
+# Step 5: Calculate actual achieved margins
+if include_gst:
+    actual_price_before_gst = final_selling_price / 1.10
+    actual_gst = final_selling_price - actual_price_before_gst
+else:
+    actual_price_before_gst = final_selling_price
+    actual_gst = 0.0
+
+actual_profit = actual_price_before_gst - total_cost
+actual_margin = (actual_profit / actual_price_before_gst) * 100 if actual_price_before_gst > 0 else 0
 
 with results_container:
     st.header("💡 Pricing Results")
@@ -101,33 +127,36 @@ with results_container:
     # Pricing recommendation
     st.subheader("Recommended Price")
     
-    # Show price breakdown
-    if include_gst:
-        st.write(f"**Price before GST:** ${selling_price_before_gst:.2f}")
+    # Show pricing flow
+    if sales_discount > 0:
+        st.write(f"**List Price:** ${list_price:.2f}")
+        st.write(f"**Discount ({sales_discount}%):** -${list_price - discounted_price:.2f}")
+    
+    if include_gst and sales_discount == 0:
+        st.write(f"**Price before GST:** ${base_selling_price:.2f}")
         st.write(f"**GST (10%):** ${gst_amount:.2f}")
-        st.metric(
-            label="Final Price (inc GST)", 
-            value=f"${final_selling_price:.2f}",
-            help=f"Includes GST and ensures {profit_margin}% profit margin"
-        )
-    else:
-        st.metric(
-            label="Selling Price", 
-            value=f"${final_selling_price:.2f}",
-            help=f"Ensures {profit_margin}% profit margin"
-        )
     
     st.metric(
-        label="Profit", 
-        value=f"${profit_amount:.2f}",
-        delta=f"{profit_margin}%"
+        label="Final Selling Price" + (" (inc GST)" if include_gst else ""), 
+        value=f"${final_selling_price:.2f}",
+        help=f"Achieves {actual_margin:.1f}% profit margin"
     )
     
-    # Visual profit check
-    if profit_margin >= 20:
-        st.success(f"✅ {profit_margin}% margin meets minimum target")
+    st.metric(
+        label="Actual Profit", 
+        value=f"${actual_profit:.2f}",
+        delta=f"{actual_margin:.1f}%"
+    )
+    
+    # Profit status
+    if actual_margin >= 20:
+        st.success(f"✅ {actual_margin:.1f}% margin meets target")
+    elif actual_margin >= minimum_sales_profit:
+        st.info(f"ℹ️ {actual_margin:.1f}% margin (sales pricing)")
+    elif actual_margin >= 0:
+        st.warning(f"⚠️ {actual_margin:.1f}% margin (low profit)")
     else:
-        st.error("❌ Below minimum 20% margin")
+        st.error(f"❌ {actual_margin:.1f}% margin (loss!)")
 
 # Market comparison section
 st.header("🔍 Market Comparison")
@@ -174,18 +203,17 @@ if competitors:
         price_diff = final_selling_price - avg_competitor_price
         st.warning(f"⚠️ Your price is ${price_diff:.2f} above average competitor price. Consider if premium quality justifies this.")
 
-# Summary section - ALL VARIABLES ARE NOW PROPERLY DEFINED BEFORE USE
+# Summary section - ALL VARIABLES PROPERLY DEFINED
 st.header("📋 Pricing Summary")
 
-# Build GST text safely
-gst_text = f" (inc GST ${actual_gst_amount:.2f})" if include_gst and actual_gst_amount > 0 else ""
+gst_text = f" (inc GST ${actual_gst:.2f})" if include_gst and actual_gst > 0 else ""
 discount_text = f" (after {sales_discount}% discount)" if sales_discount > 0 else ""
 
 summary_text = f"""
 **Product Pricing Decision:**
 - **Final Selling Price:** ${final_selling_price:.2f}{gst_text}{discount_text}
 - **Total Cost:** ${total_cost:.2f}
-- **Profit:** ${actual_profit_amount:.2f} ({actual_profit_margin:.1f}%)
+- **Actual Profit:** ${actual_profit:.2f} ({actual_margin:.1f}%)
 - **Cost Breakdown:** Plant ${plant_cost:.2f} + Materials ${total_material_cost:.2f} (incl. packaging ${packaging_cost:.2f}) + Time ${time_cost:.2f}
 """
 
