@@ -178,13 +178,14 @@ if competitors:
 st.header("📋 Pricing Summary")
 
 # Build GST text safely
-gst_text = f" (inc GST ${gst_amount:.2f})" if include_gst and gst_amount > 0 else ""
+gst_text = f" (inc GST ${actual_gst_amount:.2f})" if include_gst and actual_gst_amount > 0 else ""
+discount_text = f" (after {sales_discount}% discount)" if sales_discount > 0 else ""
 
 summary_text = f"""
 **Product Pricing Decision:**
-- **Final Selling Price:** ${final_selling_price:.2f}{gst_text}
+- **Final Selling Price:** ${final_selling_price:.2f}{gst_text}{discount_text}
 - **Total Cost:** ${total_cost:.2f}
-- **Profit:** ${profit_amount:.2f} ({profit_margin}%)
+- **Profit:** ${actual_profit_amount:.2f} ({actual_profit_margin:.1f}%)
 - **Cost Breakdown:** Plant ${plant_cost:.2f} + Materials ${total_material_cost:.2f} (incl. packaging ${packaging_cost:.2f}) + Time ${time_cost:.2f}
 """
 
